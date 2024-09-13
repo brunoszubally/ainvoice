@@ -182,6 +182,9 @@ def upload_pdf():
     # OCR futtatása a Google Document AI segítségével
     document_text = process_document_sample(project_id, location, processor_id, file_path, mime_type)
 
+    # Logoljuk a kinyert OCR szöveget
+    print("Google Document AI extracted text:", document_text)
+
     # Az átmenetileg mentett fájl törlése
     os.remove(file_path)
 
@@ -192,9 +195,12 @@ def upload_pdf():
     return jsonify(invoice_data)
 
 def extract_invoice_data(document_text):
+    # Logoljuk a szöveget, amit az OpenAI-nak küldünk
+    print("Text being sent to OpenAI:", document_text)
+    
     # OpenAI API meghívása a számla adatok felismeréséhez
     response = client.chat.completions.create(
-        model="gpt-4o-mini",  # vagy gpt-3.5-turbo
+        model="gpt-4",  # vagy gpt-3.5-turbo
         messages=[
             {
                 "role": "system",
