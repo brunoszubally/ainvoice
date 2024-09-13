@@ -6,3 +6,5 @@ gunicorn
 werkzeug
 pandas
 xlsxwriter
+google-cloud-documentai
+google-api-core
