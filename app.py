@@ -1,16 +1,13 @@
 import os
 import json
-import pandas as pd
-from flask import Flask, request, send_file
+from flask import Flask, request, jsonify
 from openai import OpenAI
-import io
 
 # Flask alkalmazás létrehozása
 app = Flask(__name__)
 
-# OpenAI API kulcs beállítása közvetlenül a kódban
-
-api_key = os.getenv("ASSISTANT_KEY")
+# OpenAI API kulcs beállítása környezeti változóból (vagy itt közvetlenül is megadhatod)
+api_key = os.getenv("ASSISTANT_KEY")  # vagy használd: api_key = 'your_api_key'
 client = OpenAI(api_key=api_key)
 
 def parse_response_to_json(response_text):
@@ -81,44 +78,43 @@ def parse_response_to_json(response_text):
 
     return invoice_data
 
-def save_to_excel(invoice_data):
-    output = io.BytesIO()  # Létrehozunk egy memóriába író objektumot
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df_main = pd.DataFrame([{
-            "Field": "Invoice Date", "Value": invoice_data.get("Invoice Date")
-        }, {
-            "Field": "PO Number", "Value": invoice_data.get("PO Number")
-        }, {
-            "Field": "Seller Company Name", "Value": invoice_data.get("Seller Company Name")
-        }, {
-            "Field": "Seller Company Address", "Value": invoice_data.get("Seller Company Address")
-        }, {
-            "Field": "Seller Tax No.", "Value": invoice_data.get("Seller Tax No.")
-        }, {
-            "Field": "Buyer Company Name", "Value": invoice_data.get("Buyer Company Name")
-        }, {
-            "Field": "Buyer Company Address", "Value": invoice_data.get("Buyer Company Address")
-        }, {
-            "Field": "Buyer Tax No.", "Value": invoice_data.get("Buyer Tax No.")
-        }])
-        df_main.to_excel(writer, sheet_name='Invoice', index=False)
-
-        df_items = pd.DataFrame(invoice_data.get("Items", []))
-        df_items.to_excel(writer, sheet_name='Invoice', startrow=len(df_main) + 2, index=False)
-
-        df_vat_summary = pd.DataFrame([{
-            "Field": "VAT percent", "Value": invoice_data.get("VAT percent")
-        }, {
-            "Field": "Subtotal excluded VAT", "Value": invoice_data.get("Subtotal excluded VAT")
-        }, {
-            "Field": "Total included VAT", "Value": invoice_data.get("Total included VAT")
-        }, {
-            "Field": "Shipping Cost", "Value": invoice_data.get("Shipping Cost")
-        }])
-        df_vat_summary.to_excel(writer, sheet_name='Invoice', startrow=len(df_main) + len(df_items) + 5, index=False)
+def extract_invoice_data(json_data):
+    # OpenAI API meghívása a számla adatok felismeréséhez
+    response = client.chat_completions.create(
+        model="gpt-4",  # vagy gpt-3.5-turbo
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI that extracts invoice data."
+            },
+            {
+                "role": "user",
+                "content": f"Extract the following information from the invoice JSON:\n\n"
+                           f"1. Invoice Date\n"
+                           f"2. PO Number\n"
+                           f"3. Seller Company Name\n"
+                           f"4. Seller Company Address\n"
+                           f"5. Seller Tax No.\n"
+                           f"6. Buyer Company Name\n"
+                           f"7. Buyer Company Address\n"
+                           f"8. Buyer Tax No.\n"
+                           f"9. Items (including description, quantity, price, amount, and any discounts)\n"
+                           f"10. VAT percent\n"
+                           f"11. Subtotal excluded VAT\n"
+                           f"12. Total included VAT\n"
+                           f"13. Shipping Cost\n\n"
+                           f"JSON Data:\n{json.dumps(json_data)}"
+            }
+        ]
+    )
     
-    output.seek(0)  # Visszaállítjuk az íráspozíciót a fájl elejére
-    return output
+    # Az eredmény kinyerése az OpenAI válaszból
+    response_text = response['choices'][0]['message']['content']
+
+    # A válasz feldolgozása és JSON formátumra alakítása
+    invoice_data = parse_response_to_json(response_text)
+
+    return invoice_data
 
 @app.route('/upload_json', methods=['POST'])
 def upload_json():
@@ -127,14 +123,11 @@ def upload_json():
     if not json_data:
         return "No JSON data found", 400
     
-    # Számla adatok kinyerése
-    invoice_data = parse_response_to_json(json.dumps(json_data))  # Egyszerűsítve
+    # Számla adatok kinyerése OpenAI segítségével
+    invoice_data = extract_invoice_data(json_data)
     
-    # Excel fájl generálása
-    excel_data = save_to_excel(invoice_data)
-    
-    # Excel fájl küldése letöltésre
-    return send_file(excel_data, download_name='invoice.xlsx', as_attachment=True)
+    # Számla adatok visszaadása JSON formátumban
+    return jsonify(invoice_data)
 
 # Webszerver indítása
 if __name__ == '__main__':
