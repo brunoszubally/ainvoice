@@ -1,28 +1,14 @@
 import os
 import json
 from flask import Flask, request, jsonify
-from google.api_core.client_options import ClientOptions
-from google.cloud import documentai  # type: ignore
 from openai import OpenAI
-from typing import Optional
 
 # Flask alkalmazás létrehozása
 app = Flask(__name__)
 
-# OpenAI API kulcs beállítása
-api_key = os.getenv("OPENAI_API_KEY")
+# OpenAI API kulcs beállítása környezeti változóból (vagy itt közvetlenül is megadhatod)
+api_key = os.getenv("ASSISTANT_KEY")  # vagy használd: api_key = 'your_api_key'
 client = OpenAI(api_key=api_key)
-
-# GCP hitelesítési fájl létrehozása a környezeti változóból
-def create_gcp_credentials_file():
-    credentials_json = os.getenv("GCP_CREDENTIALS")
-    if credentials_json:
-        credentials_path = "/tmp/credentials.json"  # Átmeneti fájl
-        with open(credentials_path, "w") as f:
-            f.write(credentials_json)
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
-    else:
-        raise Exception("No GCP credentials found in environment variable.")
 
 def parse_response_to_json(response_text):
     # Számla adatainak feldolgozása
@@ -130,61 +116,17 @@ def extract_invoice_data(json_data):
 
     return invoice_data
 
-def process_document_sample(project_id: str, location: str, processor_id: str, file_path: str, mime_type: str) -> str:
-    # Hitelesítési fájl létrehozása
-    create_gcp_credentials_file()
+@app.route('/upload_json', methods=['POST'])
+def upload_json():
+    # JSON fájl fogadása
+    json_data = request.json
+    if not json_data:
+        return "No JSON data found", 400
     
-    # Google Document AI feldolgozás
-    opts = ClientOptions(api_endpoint=f"{location}-documentai.googleapis.com")
-    client = documentai.DocumentProcessorServiceClient(client_options=opts)
-
-    name = client.processor_path(project_id, location, processor_id)
-
-    # PDF fájl beolvasása
-    with open(file_path, "rb") as pdf_file:
-        pdf_content = pdf_file.read()
-
-    # RawDocument létrehozása
-    raw_document = documentai.RawDocument(content=pdf_content, mime_type=mime_type)
-
-    # Document AI ProcessRequest létrehozása
-    request = documentai.ProcessRequest(name=name, raw_document=raw_document)
-
-    # A feldolgozási kérés elküldése a Document AI-hoz
-    result = client.process_document(request=request)
+    # Számla adatok kinyerése OpenAI segítségével
+    invoice_data = extract_invoice_data(json_data)
     
-    # Dokumentum szöveges tartalmának kinyerése
-    document_text = result.document.text
-
-    return document_text
-
-@app.route('/upload_pdf', methods=['POST'])
-def upload_pdf():
-    # PDF fájl fogadása
-    pdf_file = request.files.get('file')
-    if not pdf_file:
-        return "No file found", 400
-
-    # Fájl mentése átmenetileg
-    file_path = os.path.join(os.getcwd(), pdf_file.filename)
-    pdf_file.save(file_path)
-
-    # Google Document AI paraméterek
-    project_id = "gifted-country-324010"
-    location = "us"
-    processor_id = "e0bb021f188ca0d8"
-    mime_type = "application/pdf"
-
-    # OCR futtatása a Google Document AI segítségével
-    document_text = process_document_sample(project_id, location, processor_id, file_path, mime_type)
-
-    # OpenAI feldolgozás a visszakapott OCR szöveg alapján
-    invoice_data = extract_invoice_data(document_text)
-
-    # Az átmenetileg mentett fájl törlése
-    os.remove(file_path)
-
-    # Számla adatok visszaküldése JSON formátumban
+    # Számla adatok visszaadása JSON formátumban
     return jsonify(invoice_data)
 
 # Webszerver indítása
