@@ -109,7 +109,7 @@ def extract_invoice_data(json_data):
     )
     
     # Az eredmény kinyerése az OpenAI válaszból
-     response_text = (response.choices[0].message.content)
+    response_text = (response.choices[0].message.content)
 
     # A válasz feldolgozása és JSON formátumra alakítása
     invoice_data = parse_response_to_json(response_text)
