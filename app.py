@@ -134,7 +134,7 @@ def upload_json():
     excel_data = save_to_excel(invoice_data)
     
     # Excel fájl küldése letöltésre
-    return send_file(excel_data, attachment_filename='invoice.xlsx', as_attachment=True)
+    return send_file(excel_data, download_name='invoice.xlsx', as_attachment=True)
 
 # Webszerver indítása
 if __name__ == '__main__':
