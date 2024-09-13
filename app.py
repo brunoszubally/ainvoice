@@ -80,8 +80,8 @@ def parse_response_to_json(response_text):
 
 def extract_invoice_data(json_data):
     # OpenAI API meghívása a számla adatok felismeréséhez
-    response = client.chat_completions.create(
-        model="gpt-4",  # vagy gpt-3.5-turbo
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",  # vagy gpt-3.5-turbo
         messages=[
             {
                 "role": "system",
@@ -109,7 +109,7 @@ def extract_invoice_data(json_data):
     )
     
     # Az eredmény kinyerése az OpenAI válaszból
-    response_text = response['choices'][0]['message']['content']
+     response_text = (response.choices[0].message.content)
 
     # A válasz feldolgozása és JSON formátumra alakítása
     invoice_data = parse_response_to_json(response_text)
