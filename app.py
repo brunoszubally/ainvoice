@@ -161,9 +161,13 @@ def process_document_sample(project_id: str, location: str, processor_id: str, f
 @app.route('/upload_pdf', methods=['POST'])
 def upload_pdf():
     # PDF fájl fogadása
-    pdf_file = request.files.get('file')
-    if not pdf_file:
+    if 'file' not in request.files:
         return "No file found", 400
+    
+    pdf_file = request.files.get('file')
+    
+    if pdf_file.filename == '':
+        return "No selected file", 400
 
     # Fájl mentése átmenetileg
     file_path = os.path.join(os.getcwd(), pdf_file.filename)
