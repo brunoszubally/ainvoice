@@ -162,12 +162,12 @@ def process_document_sample(project_id: str, location: str, processor_id: str, f
 def upload_pdf():
     # PDF fájl fogadása
     if 'file' not in request.files:
-        return "No file found", 400
+        return jsonify({"error": "No file part in the request"}), 400
     
     pdf_file = request.files.get('file')
     
     if pdf_file.filename == '':
-        return "No selected file", 400
+        return jsonify({"error": "No selected file"}), 400
 
     # Fájl mentése átmenetileg
     file_path = os.path.join(os.getcwd(), pdf_file.filename)
@@ -182,14 +182,12 @@ def upload_pdf():
     # OCR futtatása a Google Document AI segítségével
     document_text = process_document_sample(project_id, location, processor_id, file_path, mime_type)
 
-    # OpenAI feldolgozás a visszakapott OCR szöveg alapján
-    invoice_data = extract_invoice_data(document_text)
-
     # Az átmenetileg mentett fájl törlése
     os.remove(file_path)
 
-    # Számla adatok visszaküldése JSON formátumban
-    return jsonify(invoice_data)
+    # A Google Document AI által visszaadott szöveg közvetlen visszaadása a válaszban
+    return jsonify({"document_text": document_text})
+
 
 # Webszerver indítása
 if __name__ == '__main__':
