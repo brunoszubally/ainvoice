@@ -92,43 +92,7 @@ def parse_response_to_json(response_text):
 
     return invoice_data
 
-def extract_invoice_data(json_data):
-    # OpenAI API meghívása a számla adatok felismeréséhez
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",  # vagy gpt-3.5-turbo
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an AI that extracts invoice data."
-            },
-            {
-                "role": "user",
-                "content": f"Extract the following information from the invoice JSON:\n\n"
-                           f"1. Invoice Date\n"
-                           f"2. PO Number\n"
-                           f"3. Seller Company Name\n"
-                           f"4. Seller Company Address\n"
-                           f"5. Seller Tax No.\n"
-                           f"6. Buyer Company Name\n"
-                           f"7. Buyer Company Address\n"
-                           f"8. Buyer Tax No.\n"
-                           f"9. Items (including description, quantity, price, amount, and any discounts)\n"
-                           f"10. VAT percent\n"
-                           f"11. Subtotal excluded VAT\n"
-                           f"12. Total included VAT\n"
-                           f"13. Shipping Cost\n\n"
-                           f"JSON Data:\n{json.dumps(json_data)}"
-            }
-        ]
-    )
-    
-    # Az eredmény kinyerése az OpenAI válaszból
-    response_text = (response.choices[0].message.content)
 
-    # A válasz feldolgozása és JSON formátumra alakítása
-    invoice_data = parse_response_to_json(response_text)
-
-    return invoice_data
 
 def process_document_sample(project_id: str, location: str, processor_id: str, file_path: str, mime_type: str) -> str:
     # Hitelesítési fájl létrehozása
