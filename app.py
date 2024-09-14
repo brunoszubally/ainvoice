@@ -92,6 +92,18 @@ def upload_pdf():
 import json
 from flask import jsonify
 
+from flask import Flask, request, jsonify, Response
+import openai
+import json
+
+# Flask alkalmazás létrehozása
+app = Flask(__name__)
+
+# OpenAI API kulcs beállítása környezeti változóból
+api_key = os.getenv("ASSISTANT_KEY")
+client = openai.OpenAI(api_key=api_key)  # Helyesen beállított OpenAI kliens
+
+
 def extract_invoice_data(document_text):
     # Logoljuk a szöveget, amit az OpenAI-nak küldünk
     print("Text being sent to OpenAI:", document_text)
@@ -99,8 +111,7 @@ def extract_invoice_data(document_text):
     try:
         # OpenAI API meghívása a számla adatok felismeréséhez
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # vagy gpt-3.5-turbo
-            messages=[
+            model="gpt-4o-mini"
                 {
                     "role": "system",
                     "content": "You are an AI that extracts invoice data."
@@ -140,15 +151,17 @@ def extract_invoice_data(document_text):
         # Karakterszám alapján eltávolítjuk az első 7 és az utolsó 3 karaktert (```json és ``` eltávolítása)
         cleaned_response_text = response_text[7:-3].strip()
 
-        # EXTRA tisztítás, ha szükséges (pl. felesleges visszaper karakterek, új sorok)
-        cleaned_response_text = cleaned_response_text.replace('\n', '').replace('\\', '')
         print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
         # JSON validálás és visszaadás
         try:
+            # JSON formátum konvertálása Python objektummá
             json_data = json.loads(cleaned_response_text)
             print("Parsed JSON data:", json_data)
+
+            # Helyesen formázott JSON visszaadása jsonify segítségével
             return jsonify(json_data)
+
         except json.JSONDecodeError as json_error:
             print(f"JSON decode error: {str(json_error)}")
             return jsonify({"error": "Failed to parse JSON from OpenAI response."}), 500
