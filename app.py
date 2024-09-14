@@ -141,12 +141,9 @@ def extract_invoice_data(document_text):
         cleaned_response_text = response_text[7:-3].strip()
         print("Cleaned response text:", cleaned_response_text)  # Logoljuk a tisztított szöveget
 
-        # A tisztított szöveget JSON-né alakítjuk
-        json_data = json.loads(cleaned_response_text)
-        print("Parsed JSON data:", json_data)  # Logoljuk a JSON adatokat
 
         # Visszaküldjük a JSON adatot
-        return jsonify(json_data)
+        return cleaned_response_text
 
     except json.JSONDecodeError as json_error:
         print(f"JSON decode error: {str(json_error)}")
