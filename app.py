@@ -72,7 +72,7 @@ def parse_response_to_json(response_text):
                     current_item = {"description": value}
                 elif "Quantity" in key:
                     current_item["quantity"] = value
-                 elif "Unit" in key:
+                elif "Unit" in key:
                     current_item["unit"] = value    
                 elif "Price" in key:
                     current_item["price"] = value
