@@ -135,12 +135,17 @@ def extract_invoice_data(document_text):
         print("Full OpenAI response:", response_text)
 
         # Az OpenAI válasz visszaküldése közvetlenül, feldolgozás nélkül
-        return response_text  # Közvetlenül visszaküldjük a választ
+        cleaned_response_text = response_text.strip('```json').strip('```').strip()  # Eltávolítjuk a ```json és ``` körüli karaktereket
+        json_data = json.loads(cleaned_response_text)  # JSON formátumúvá alakítjuk a tisztított szöveget
+        
+        # Visszaküldjük a JSON adatot
+        return jsonify(json_data)  # JSON válasz visszaküldése Flask-ban
 
     except Exception as e:
-        # Logoljuk ki a hibát, ha valami rosszul megy
+        # Logoljuk a hibát, ha valami rosszul megy
         print(f"Error during OpenAI API call: {str(e)}")
         return jsonify({"error": "An error occurred while processing the invoice data."}), 500
+
 
 
 # Webszerver indítása
