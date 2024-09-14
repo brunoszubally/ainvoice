@@ -147,13 +147,15 @@ def extract_invoice_data(document_text):
             json_data = json.loads(cleaned_response_text)
 
             # Minden mező stringgé alakítása, hogy biztosítsuk a helyes JSON formátumot
-            json_data = {key: str(value) if not isinstance(value, list) else value for key, value in json_data.items()}
+            def convert_to_string(data):
+                if isinstance(data, dict):
+                    return {key: convert_to_string(value) for key, value in data.items()}
+                elif isinstance(data, list):
+                    return [convert_to_string(item) for item in data]
+                else:
+                    return str(data)
 
-            # Az Items lista stringként való biztosítása
-            for item in json_data.get("Items", []):
-                item['quantity'] = str(item.get('quantity', ''))
-                item['price'] = str(item.get('price', ''))
-                item['amount'] = str(item.get('amount', ''))
+            json_data = convert_to_string(json_data)
 
             print("Parsed and fully string-converted JSON data:", json_data)
 
