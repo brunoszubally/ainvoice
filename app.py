@@ -159,9 +159,8 @@ def extract_invoice_data(document_text):
 
             print("Parsed and fully string-converted JSON data:", json_data)
 
-            # Helyesen formázott JSON visszaadása a json.dumps használatával
-            response_json = json.dumps(json_data, ensure_ascii=False)  # Maradjanak meg az ékezetes karakterek is
-            return Response(response_json, mimetype='application/json')
+            # JSON adatok visszaadása
+            return jsonify(json_data)
 
         except json.JSONDecodeError as json_error:
             print(f"JSON decode error: {str(json_error)}")
