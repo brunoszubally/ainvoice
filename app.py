@@ -163,51 +163,57 @@ def upload_pdf():
 def extract_invoice_data(document_text):
     # Logoljuk a szöveget, amit az OpenAI-nak küldünk
     print("Text being sent to OpenAI:", document_text)
-    
-    # OpenAI API meghívása a számla adatok felismeréséhez
-    response = client.chat.completions.create(
-        model="gpt-4",  # vagy gpt-3.5-turbo
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an AI that extracts invoice data."
-            },
-            {
-                "role": "user",
-                "content": (
-                    "Here is the text of an invoice. Please extract the following information as structured data:\n"
-                    "1. Invoice Date (if not present, return '-')\n"
-                    "2. PO Number (if not present, return '-')\n"
-                    "3. Seller Company Name (if not present, return '-')\n"
-                    "4. Seller Company Address (if not present, return '-')\n"
-                    "5. Seller Tax No. (if not present, return '-')\n"
-                    "6. Buyer Company Name (if not present, return '-')\n"
-                    "7. Buyer Company Address (if not present, return '-')\n"
-                    "8. Buyer Tax No. (if not present, return '-')\n"
-                    "9. Items with structured information (if items are not present, return '-'): \n"
-                    "   - description as 'description'\n"
-                    "   - quantity (without unit) as 'quantity'\n"
-                    "   - unit as 'unit'\n"
-                    "   - price per unit as 'price'\n"
-                    "   - full amount as 'amount'\n"
-                    "10. VAT percent (if there is no VAT information, return '-')\n"
-                    "11. Subtotal excluded VAT (if not present, return '-')\n"
-                    "12. Total included VAT (if not present, return '-')\n"
-                    "13. Shipping Cost (if not present, return '-')\n\n"
-                    f"Text of the invoice:\n{document_text}"
-                )
-            }
-        ]
-    )
 
-    # Logoljuk ki a teljes OpenAI választ
-    response_text = response.choices[0].message['content']
-    print("Full OpenAI response:", response_text)
+    try:
+        # OpenAI API meghívása a számla adatok felismeréséhez
+        response = client.chat.completions.create(
+            model="gpt-4",  # vagy gpt-3.5-turbo
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an AI that extracts invoice data."
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Here is the text of an invoice. Please extract the following information as structured data:\n"
+                        "1. Invoice Date (if not present, return '-')\n"
+                        "2. PO Number (if not present, return '-')\n"
+                        "3. Seller Company Name (if not present, return '-')\n"
+                        "4. Seller Company Address (if not present, return '-')\n"
+                        "5. Seller Tax No. (if not present, return '-')\n"
+                        "6. Buyer Company Name (if not present, return '-')\n"
+                        "7. Buyer Company Address (if not present, return '-')\n"
+                        "8. Buyer Tax No. (if not present, return '-')\n"
+                        "9. Items with structured information (if items are not present, return '-'): \n"
+                        "   - description as 'description'\n"
+                        "   - quantity (without unit) as 'quantity'\n"
+                        "   - unit as 'unit'\n"
+                        "   - price per unit as 'price'\n"
+                        "   - full amount as 'amount'\n"
+                        "10. VAT percent (if there is no VAT information, return '-')\n"
+                        "11. Subtotal excluded VAT (if not present, return '-')\n"
+                        "12. Total included VAT (if not present, return '-')\n"
+                        "13. Shipping Cost (if not present, return '-')\n\n"
+                        f"Text of the invoice:\n{document_text}"
+                    )
+                }
+            ]
+        )
 
-    # A válasz feldolgozása és JSON formátumra alakítása
-    invoice_data = parse_response_to_json(response_text)
+        # Logoljuk ki a teljes OpenAI választ
+        response_text = response.choices[0].message['content']
+        print("Full OpenAI response:", response_text)
 
-    return invoice_data
+        # A válasz feldolgozása és JSON formátumra alakítása
+        invoice_data = parse_response_to_json(response_text)
+        return invoice_data
+
+    except Exception as e:
+        # Logoljuk ki a hibát, ha valami rosszul megy
+        print(f"Error during OpenAI API call: {str(e)}")
+        return jsonify({"error": "An error occurred while processing the invoice data."}), 500
+
 
 
 # Webszerver indítása
