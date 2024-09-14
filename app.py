@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from google.api_core.client_options import ClientOptions
 from google.cloud import documentai  # type: ignore
 import openai  # Itt az OpenAI modul helyes használata
