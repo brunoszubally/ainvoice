@@ -164,11 +164,11 @@ def extract_invoice_data(document_text):
     
     # OpenAI API meghívása a számla adatok felismeréséhez
     response = client.chat.completions.create(
-        model="gpt-4o-mini",  # vagy gpt-3.5-turbo
+        model="gpt-4o-mini",  
         messages=[
             {
                 "role": "system",
-                "content": "You are an AI that extracts invoice data."
+                "content": "You are an AI that extracts invoice data. Only give back the exact data, nothing else!"
             },
             {
                 "role": "user",
@@ -181,11 +181,11 @@ def extract_invoice_data(document_text):
                            f"6. Buyer Company Name\n"
                            f"7. Buyer Company Address\n"
                            f"8. Buyer Tax No.\n"
-                           f"9. Items (description, quantity, price, amount, discounts)\n"
-                           f"10. VAT percent\n"
+                           f"9. Items with structured information(description, quantity, unit, price, full amount)\n"
+                           f"10. VAT percent - IF THERE IS NO VAT INFORMATION, GIVE BACK - CHARACTER \n"
                            f"11. Subtotal excluded VAT\n"
                            f"12. Total included VAT\n"
-                           f"13. Shipping Cost\n\n"
+                           f"13. Shipping Cost - IF THERE IS NO SHIPPING COST, GIVE BACK - CHARACTER!\n\n"
                            f"Text of the invoice:\n{document_text}"
             }
         ]
