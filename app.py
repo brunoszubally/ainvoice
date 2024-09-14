@@ -89,19 +89,6 @@ def upload_pdf():
     # Számla adatok visszaküldése JSON formátumban
     return jsonify(invoice_data)
 
-import json
-from flask import jsonify
-
-from flask import Flask, request, jsonify, Response
-import openai
-import json
-
-# Flask alkalmazás létrehozása
-app = Flask(__name__)
-
-# OpenAI API kulcs beállítása környezeti változóból
-api_key = os.getenv("ASSISTANT_KEY")
-client = openai.OpenAI(api_key=api_key)  # Helyesen beállított OpenAI kliens
 
 
 def extract_invoice_data(document_text):
