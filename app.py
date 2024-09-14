@@ -132,7 +132,6 @@ def extract_invoice_data(document_text):
             ]
         )
 
-        # OpenAI válasz kivonása
         response_text = (response.choices[0].message.content)
         print("Full OpenAI response:", response_text)
 
@@ -145,7 +144,19 @@ def extract_invoice_data(document_text):
         try:
             # JSON formátum konvertálása Python objektummá
             json_data = json.loads(cleaned_response_text)
-            print("Parsed JSON data:", json_data)
+
+            # Minden numerikus adat stringgé alakítása a JSON-ban
+            if 'Items' in json_data:
+                for item in json_data['Items']:
+                    item['quantity'] = str(item.get('quantity', ''))
+                    item['price'] = str(item.get('price', ''))
+                    item['amount'] = str(item.get('amount', ''))
+
+            json_data['VAT percent'] = str(json_data.get('VAT percent', ''))
+            json_data['Subtotal excluded VAT'] = str(json_data.get('Subtotal excluded VAT', ''))
+            json_data['Total included VAT'] = str(json_data.get('Total included VAT', ''))
+
+            print("Parsed and converted JSON data:", json_data)
 
             # Helyesen formázott JSON visszaadása jsonify segítségével
             return jsonify(json_data)
