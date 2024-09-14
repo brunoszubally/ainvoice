@@ -98,7 +98,7 @@ def extract_invoice_data(document_text):
     try:
         # OpenAI API meghívása a számla adatok felismeréséhez
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o-mini",  # vagy gpt-3.5-turbo
             messages=[
                 {
                     "role": "system",
@@ -157,8 +157,9 @@ def extract_invoice_data(document_text):
 
             print("Parsed and fully string-converted JSON data:", json_data)
 
-            # Helyesen formázott JSON visszaadása jsonify segítségével
-            return jsonify(json_data)
+            # Helyesen formázott JSON visszaadása a json.dumps használatával
+            response_json = json.dumps(json_data, ensure_ascii=False)  # Maradjanak meg az ékezetes karakterek is
+            return Response(response_json, mimetype='application/json')
 
         except json.JSONDecodeError as json_error:
             print(f"JSON decode error: {str(json_error)}")
