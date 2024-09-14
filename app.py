@@ -134,6 +134,7 @@ def extract_invoice_data(document_text):
         )
 
         # OpenAI válasz kivonása
+        # OpenAI válasz kivonása
         response_text = (response.choices[0].message.content)
         print("Full OpenAI response:", response_text)
 
@@ -141,13 +142,9 @@ def extract_invoice_data(document_text):
         cleaned_response_text = response_text[7:-3].strip()
         print("Cleaned response text:", cleaned_response_text)  # Logoljuk a tisztított szöveget
 
+        # Közvetlenül visszaküldjük a tisztított JSON szöveget
+        return Response(cleaned_response_text, mimetype='application/json')
 
-        # Visszaküldjük a JSON adatot
-        return cleaned_response_text
-
-    except json.JSONDecodeError as json_error:
-        print(f"JSON decode error: {str(json_error)}")
-        return jsonify({"error": "Failed to parse JSON from OpenAI response."}), 500
     except Exception as e:
         # Logoljuk ki a hibát, ha valami rosszul megy
         print(f"Error during OpenAI API call: {str(e)}")
