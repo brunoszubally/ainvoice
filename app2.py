@@ -1,7 +1,11 @@
 import os
 import json
 from flask import Flask, request, jsonify
+from google.api_core.client_options import ClientOptions
+from google.cloud import documentai  # type: ignore
+import openai
 from openai import OpenAI
+
 
 # Flask alkalmazás létrehozása
 app = Flask(__name__)
@@ -9,6 +13,20 @@ app = Flask(__name__)
 # OpenAI API kulcs beállítása környezeti változóból (vagy itt közvetlenül is megadhatod)
 api_key = os.getenv("ASSISTANT_KEY")  # vagy használd: api_key = 'your_api_key'
 client = OpenAI(api_key=api_key)
+
+
+
+
+# GCP hitelesítési fájl létrehozása a környezeti változóból
+def create_gcp_credentials_file():
+    credentials_json = os.getenv("GCP_CREDENTIALS")
+    if credentials_json:
+        credentials_path = "/tmp/credentials.json"  # Átmeneti fájl
+        with open(credentials_path, "w") as f:
+            f.write(credentials_json)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+    else:
+        raise Exception("No GCP credentials found in environment variable.")
 
 def parse_response_to_json(response_text):
     # Számla adatainak feldolgozása
@@ -28,6 +46,7 @@ def parse_response_to_json(response_text):
         "Shipping Cost": ""
     }
 
+    # Az API válasz soronkénti feldolgozása
     lines = response_text.split("\n")
     current_item = {}
     for line in lines:
@@ -36,6 +55,8 @@ def parse_response_to_json(response_text):
             key_value = line.split(": ", 1)
             if len(key_value) == 2:
                 key, value = key_value
+                # Tisztítsuk meg az extra idézőjeleket és fehér karaktereket
+                value = value.strip().strip("\"").strip(",")
                 if "Invoice Date" in key:
                     invoice_data["Invoice Date"] = value
                 elif "PO Number" in key:
@@ -58,12 +79,12 @@ def parse_response_to_json(response_text):
                     current_item = {"description": value}
                 elif "Quantity" in key:
                     current_item["quantity"] = value
+                elif "Unit" in key:
+                    current_item["unit"] = value    
                 elif "Price" in key:
                     current_item["price"] = value
                 elif "Amount" in key:
                     current_item["amount"] = value
-                elif "Discounts" in key:
-                    current_item["discount"] = value
                 elif "VAT percent" in key:
                     invoice_data["VAT percent"] = value
                 elif "Subtotal excluded VAT" in key:
@@ -73,61 +94,130 @@ def parse_response_to_json(response_text):
                 elif "Shipping Cost" in key:
                     invoice_data["Shipping Cost"] = value
     
+    # Az utolsó tétel hozzáadása az Items listához
     if current_item:
         invoice_data["Items"].append(current_item)
 
     return invoice_data
 
-def extract_invoice_data(json_data):
-    # OpenAI API meghívása a számla adatok felismeréséhez
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",  # vagy gpt-3.5-turbo
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an AI that extracts invoice data."
-            },
-            {
-                "role": "user",
-                "content": f"Extract the following information from the invoice JSON:\n\n"
-                           f"1. Invoice Date\n"
-                           f"2. PO Number\n"
-                           f"3. Seller Company Name\n"
-                           f"4. Seller Company Address\n"
-                           f"5. Seller Tax No.\n"
-                           f"6. Buyer Company Name\n"
-                           f"7. Buyer Company Address\n"
-                           f"8. Buyer Tax No.\n"
-                           f"9. Items (including description, quantity, price, amount, and any discounts)\n"
-                           f"10. VAT percent\n"
-                           f"11. Subtotal excluded VAT\n"
-                           f"12. Total included VAT\n"
-                           f"13. Shipping Cost\n\n"
-                           f"JSON Data:\n{json.dumps(json_data)}"
-            }
-        ]
-    )
+def process_document_sample(project_id: str, location: str, processor_id: str, file_path: str, mime_type: str) -> str:
+    # Hitelesítési fájl létrehozása
+    create_gcp_credentials_file()
     
-    # Az eredmény kinyerése az OpenAI válaszból
-    response_text = (response.choices[0].message.content)
+    # Google Document AI feldolgozás
+    opts = ClientOptions(api_endpoint=f"{location}-documentai.googleapis.com")
+    client = documentai.DocumentProcessorServiceClient(client_options=opts)
 
-    # A válasz feldolgozása és JSON formátumra alakítása
-    invoice_data = parse_response_to_json(response_text)
+    name = client.processor_path(project_id, location, processor_id)
 
-    return invoice_data
+    # PDF fájl beolvasása
+    with open(file_path, "rb") as pdf_file:
+        pdf_content = pdf_file.read()
 
-@app.route('/upload_json', methods=['POST'])
-def upload_json():
-    # JSON fájl fogadása
-    json_data = request.json
-    if not json_data:
-        return "No JSON data found", 400
+    # RawDocument létrehozása
+    raw_document = documentai.RawDocument(content=pdf_content, mime_type=mime_type)
+
+    # Document AI ProcessRequest létrehozása
+    request = documentai.ProcessRequest(name=name, raw_document=raw_document)
+
+    # A feldolgozási kérés elküldése a Document AI-hoz
+    result = client.process_document(request=request)
     
-    # Számla adatok kinyerése OpenAI segítségével
-    invoice_data = extract_invoice_data(json_data)
+    # Dokumentum szöveges tartalmának kinyerése
+    document_text = result.document.text
+
+    return document_text
+
+@app.route('/upload_pdf', methods=['POST'])
+def upload_pdf():
+    # PDF fájl fogadása
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
     
-    # Számla adatok visszaadása JSON formátumban
+    pdf_file = request.files.get('file')
+    
+    if pdf_file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    # Fájl mentése átmenetileg
+    file_path = os.path.join(os.getcwd(), pdf_file.filename)
+    pdf_file.save(file_path)
+
+    # Google Document AI paraméterek
+    project_id = "gifted-country-324010"
+    location = "us"
+    processor_id = "e0bb021f188ca0d8"
+    mime_type = "application/pdf"
+
+    # OCR futtatása a Google Document AI segítségével
+    document_text = process_document_sample(project_id, location, processor_id, file_path, mime_type)
+
+    # Logoljuk a kinyert OCR szöveget
+    print("Google Document AI extracted text:", document_text)
+
+    # Az átmenetileg mentett fájl törlése
+    os.remove(file_path)
+
+    # OpenAI feldolgozás a visszakapott OCR szöveg alapján
+    invoice_data = extract_invoice_data(document_text)
+
+    # Számla adatok visszaküldése JSON formátumban
     return jsonify(invoice_data)
+
+def extract_invoice_data(document_text):
+    # Logoljuk a szöveget, amit az OpenAI-nak küldünk
+    print("Text being sent to OpenAI:", document_text)
+    
+    try:
+        # OpenAI API meghívása a számla adatok felismeréséhez
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # vagy gpt-3.5-turbo
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an AI that extracts invoice data."
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Here is the text of an invoice. Please extract the following information as structured data:\n"
+                        "1. Invoice Date (if not present, return '-')\n"
+                        "2. PO Number (if not present, return '-')\n"
+                        "3. Seller Company Name (if not present, return '-')\n"
+                        "4. Seller Company Address (if not present, return '-')\n"
+                        "5. Seller Tax No. (if not present, return '-')\n"
+                        "6. Buyer Company Name (if not present, return '-')\n"
+                        "7. Buyer Company Address (if not present, return '-')\n"
+                        "8. Buyer Tax No. (if not present, return '-')\n"
+                        "9. Items with structured information (if items are not present, return '-'): \n"
+                        "   - description as 'description'\n"
+                        "   - quantity (without unit) as 'quantity'\n"
+                        "   - unit as 'unit'\n"
+                        "   - price per unit as 'price'\n"
+                        "   - full amount as 'amount'\n"
+                        "10. VAT percent (if there is no VAT information, return '-')\n"
+                        "11. Subtotal excluded VAT (if not present, return '-')\n"
+                        "12. Total included VAT (if not present, return '-')\n"
+                        "13. Shipping Cost (if not present, return '-')\n\n"
+                        f"Text of the invoice:\n{document_text}"
+                    )
+                }
+            ]
+        )
+
+        # Logoljuk ki a teljes OpenAI választ
+        response_text = (response.choices[0].message.content)
+        print("Full OpenAI response:", response_text)
+
+        # A válasz feldolgozása és JSON formátumra alakítása
+        invoice_data = parse_response_to_json(response_text)
+        return invoice_data
+
+    except Exception as e:
+        # Logoljuk ki a hibát, ha valami rosszul megy
+        print(f"Error during OpenAI API call: {str(e)}")
+        return jsonify({"error": "An error occurred while processing the invoice data."}), 500
+
 
 # Webszerver indítása
 if __name__ == '__main__':
