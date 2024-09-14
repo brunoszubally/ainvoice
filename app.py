@@ -51,8 +51,8 @@ def parse_response_to_json(response_text):
             key_value = line.split(": ", 1)
             if len(key_value) == 2:
                 key, value = key_value
-                # Tisztítsuk meg az extra idézőjeleket
-                value = value.strip("\"")  # Eltávolítja az idézőjeleket az értékek körül
+                # Tisztítsuk meg az extra idézőjeleket és fehér karaktereket
+                value = value.strip().strip("\"").strip(",")
                 if "Invoice Date" in key:
                     invoice_data["Invoice Date"] = value
                 elif "PO Number" in key:
@@ -76,7 +76,7 @@ def parse_response_to_json(response_text):
                 elif "Quantity" in key:
                     current_item["quantity"] = value
                 elif "Unit" in key:
-                    current_item["unit"] = value
+                    current_item["unit"] = value    
                 elif "Price" in key:
                     current_item["price"] = value
                 elif "Amount" in key:
@@ -90,12 +90,11 @@ def parse_response_to_json(response_text):
                 elif "Shipping Cost" in key:
                     invoice_data["Shipping Cost"] = value
     
+    # Az utolsó tétel hozzáadása az Items listához
     if current_item:
         invoice_data["Items"].append(current_item)
 
     return invoice_data
-
-
 
 def process_document_sample(project_id: str, location: str, processor_id: str, file_path: str, mime_type: str) -> str:
     # Hitelesítési fájl létrehozása
@@ -167,11 +166,11 @@ def extract_invoice_data(document_text):
     
     # OpenAI API meghívása a számla adatok felismeréséhez
     response = client.chat.completions.create(
-        model="gpt-4o-mini",  
+        model="gpt-4",  # vagy gpt-3.5-turbo
         messages=[
             {
                 "role": "system",
-                "content": "You are an AI that extracts invoice data"
+                "content": "You are an AI that extracts invoice data."
             },
             {
                 "role": "user",
@@ -200,15 +199,15 @@ def extract_invoice_data(document_text):
             }
         ]
     )
-    
-    # Az eredmény kinyerése az OpenAI válaszból
-    response_text = response.choices[0].message.content
+
+    # Logoljuk ki a teljes OpenAI választ
+    response_text = response.choices[0].message['content']
+    print("Full OpenAI response:", response_text)
 
     # A válasz feldolgozása és JSON formátumra alakítása
     invoice_data = parse_response_to_json(response_text)
 
     return invoice_data
-
 
 
 # Webszerver indítása
