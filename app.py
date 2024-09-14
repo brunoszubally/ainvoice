@@ -134,27 +134,29 @@ def extract_invoice_data(document_text):
         )
 
         # OpenAI válasz kivonása
-        # OpenAI válasz kivonása
         response_text = (response.choices[0].message.content)
         print("Full OpenAI response:", response_text)
 
         # Karakterszám alapján eltávolítjuk az első 7 és az utolsó 3 karaktert (```json és ``` eltávolítása)
         cleaned_response_text = response_text[7:-3].strip()
-        print("Cleaned response text:", cleaned_response_text)  # Logoljuk a tisztított szöveget
 
-        json_data = json.loads(cleaned_response_text)
-        return jsonify(json_data)
+        # EXTRA tisztítás, ha szükséges (pl. felesleges visszaper karakterek, új sorok)
+        cleaned_response_text = cleaned_response_text.replace('\n', '').replace('\\', '')
+        print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
-    except json.JSONDecodeError as json_error:
-        print(f"JSON decode error: {str(json_error)}")
-        return jsonify({"error": "Failed to parse JSON from OpenAI response."}), 500
+        # JSON validálás és visszaadás
+        try:
+            json_data = json.loads(cleaned_response_text)
+            print("Parsed JSON data:", json_data)
+            return jsonify(json_data)
+        except json.JSONDecodeError as json_error:
+            print(f"JSON decode error: {str(json_error)}")
+            return jsonify({"error": "Failed to parse JSON from OpenAI response."}), 500
+
     except Exception as e:
         # Logoljuk ki a hibát, ha valami rosszul megy
         print(f"Error during OpenAI API call: {str(e)}")
         return jsonify({"error": "An error occurred while processing the invoice data."}), 500
-
-
-
 
 # Webszerver indítása
 if __name__ == '__main__':
