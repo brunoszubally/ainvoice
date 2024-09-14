@@ -72,12 +72,12 @@ def parse_response_to_json(response_text):
                     current_item = {"description": value}
                 elif "Quantity" in key:
                     current_item["quantity"] = value
+                 elif "Unit" in key:
+                    current_item["unit"] = value    
                 elif "Price" in key:
                     current_item["price"] = value
                 elif "Amount" in key:
                     current_item["amount"] = value
-                elif "Discounts" in key:
-                    current_item["discount"] = value
                 elif "VAT percent" in key:
                     invoice_data["VAT percent"] = value
                 elif "Subtotal excluded VAT" in key:
@@ -181,7 +181,7 @@ def extract_invoice_data(document_text):
                            f"6. Buyer Company Name\n"
                            f"7. Buyer Company Address\n"
                            f"8. Buyer Tax No.\n"
-                           f"9. Items with structured information(description, quantity without unit, unit, price per unit, full amount)\n"
+                           f"9. Items with structured information(description as description, quantity without unit as quantity, unit as unit, price per unit as price, full amount as amount)\n"
                            f"10. VAT percent - IF THERE IS NO VAT INFORMATION, GIVE BACK - CHARACTER \n"
                            f"11. Subtotal excluded VAT\n"
                            f"12. Total included VAT\n"
