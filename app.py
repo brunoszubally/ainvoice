@@ -97,8 +97,8 @@ def extract_invoice_data(document_text):
     
     try:
         # OpenAI API meghívása a számla adatok felismeréséhez
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # vagy gpt-3.5-turbo
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
             messages=[
                 {
                     "role": "system",
@@ -133,11 +133,11 @@ def extract_invoice_data(document_text):
         )
 
         # OpenAI válasz kivonása
-        response_text = (response.choices[0].message.content)
+        response_text = (response.choices[0].message['content'])
         print("Full OpenAI response:", response_text)
 
         # Karakterszám alapján eltávolítjuk az első 7 és az utolsó 3 karaktert (```json és ``` eltávolítása)
-        cleaned_response_text = response_text[7:-3].strip()
+        cleaned_response_text = response_text.strip("```json").strip("```")
 
         print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
