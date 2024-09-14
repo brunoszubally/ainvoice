@@ -168,25 +168,32 @@ def extract_invoice_data(document_text):
         messages=[
             {
                 "role": "system",
-                "content": "You are an AI that extracts invoice data. Only give back the exact data, nothing else!"
+                "content": "You are an AI that extracts invoice data"
             },
             {
                 "role": "user",
-                "content": f"Here is the text of an invoice. Extract the following information:\n"
-                           f"1. Invoice Date\n"
-                           f"2. PO Number\n"
-                           f"3. Seller Company Name\n"
-                           f"4. Seller Company Address\n"
-                           f"5. Seller Tax No.\n"
-                           f"6. Buyer Company Name\n"
-                           f"7. Buyer Company Address\n"
-                           f"8. Buyer Tax No.\n"
-                           f"9. Items with structured information(description as description, quantity without unit as quantity, unit as unit, price per unit as price, full amount as amount)\n"
-                           f"10. VAT percent - IF THERE IS NO VAT INFORMATION, GIVE BACK - CHARACTER \n"
-                           f"11. Subtotal excluded VAT\n"
-                           f"12. Total included VAT\n"
-                           f"13. Shipping Cost - IF THERE IS NO SHIPPING COST, GIVE BACK - CHARACTER!\n\n"
-                           f"Text of the invoice:\n{document_text}"
+                "content": (
+                    "Here is the text of an invoice. Please extract the following information as structured data:\n"
+                    "1. Invoice Date (if not present, return '-')\n"
+                    "2. PO Number (if not present, return '-')\n"
+                    "3. Seller Company Name (if not present, return '-')\n"
+                    "4. Seller Company Address (if not present, return '-')\n"
+                    "5. Seller Tax No. (if not present, return '-')\n"
+                    "6. Buyer Company Name (if not present, return '-')\n"
+                    "7. Buyer Company Address (if not present, return '-')\n"
+                    "8. Buyer Tax No. (if not present, return '-')\n"
+                    "9. Items with structured information (if items are not present, return '-'): \n"
+                    "   - description as 'description'\n"
+                    "   - quantity (without unit) as 'quantity'\n"
+                    "   - unit as 'unit'\n"
+                    "   - price per unit as 'price'\n"
+                    "   - full amount as 'amount'\n"
+                    "10. VAT percent (if there is no VAT information, return '-')\n"
+                    "11. Subtotal excluded VAT (if not present, return '-')\n"
+                    "12. Total included VAT (if not present, return '-')\n"
+                    "13. Shipping Cost (if not present, return '-')\n\n"
+                    f"Text of the invoice:\n{document_text}"
+                )
             }
         ]
     )
