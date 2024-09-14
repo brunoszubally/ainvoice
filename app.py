@@ -135,7 +135,7 @@ def extract_invoice_data(document_text):
         print("Full OpenAI response:", response_text)
 
         # Az OpenAI válasz visszaküldése közvetlenül, feldolgozás nélkül
-        cleaned_response_text = response_text.strip('```json').strip('```').strip()  # Eltávolítjuk a ```json és ``` körüli karaktereket
+        cleaned_response_text = response_text[7:-3].strip()
         json_data = json.loads(cleaned_response_text)  # JSON formátumúvá alakítjuk a tisztított szöveget
         
         # Visszaküldjük a JSON adatot
