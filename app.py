@@ -42,6 +42,7 @@ def parse_response_to_json(response_text):
         "Shipping Cost": ""
     }
 
+    # Az API válasz soronkénti feldolgozása
     lines = response_text.split("\n")
     current_item = {}
     for line in lines:
@@ -50,6 +51,8 @@ def parse_response_to_json(response_text):
             key_value = line.split(": ", 1)
             if len(key_value) == 2:
                 key, value = key_value
+                # Tisztítsuk meg az extra idézőjeleket
+                value = value.strip("\"")  # Eltávolítja az idézőjeleket az értékek körül
                 if "Invoice Date" in key:
                     invoice_data["Invoice Date"] = value
                 elif "PO Number" in key:
@@ -73,7 +76,7 @@ def parse_response_to_json(response_text):
                 elif "Quantity" in key:
                     current_item["quantity"] = value
                 elif "Unit" in key:
-                    current_item["unit"] = value    
+                    current_item["unit"] = value
                 elif "Price" in key:
                     current_item["price"] = value
                 elif "Amount" in key:
