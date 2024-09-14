@@ -111,7 +111,7 @@ def extract_invoice_data(document_text):
     try:
         # OpenAI API meghívása a számla adatok felismeréséhez
         response = client.chat.completions.create(
-            model="gpt-4o-mini"
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
