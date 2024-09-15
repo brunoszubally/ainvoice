@@ -97,7 +97,7 @@ def extract_invoice_data(document_text):
     
     try:
         # OpenAI API meghívása a számla adatok felismeréséhez
-        response = client.chat.completions.create(
+        response = client.chat.completions.create( 
             model="gpt-4o-mini",
             messages=[
                 {
@@ -170,6 +170,7 @@ def extract_invoice_data(document_text):
         # Logoljuk ki a hibát, ha valami rosszul megy
         print(f"Error during OpenAI API call: {str(e)}")
         return jsonify({"error": "An error occurred while processing the invoice data."}), 500
+
 
 # Webszerver indítása
 if __name__ == '__main__':
