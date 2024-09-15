@@ -105,7 +105,7 @@ def extract_invoice_data(document_text):
                 {
                     "role": "user",
                     "content": (
-                        "Here is the text of an invoice. Please extract the following information as structured data!:\n"
+                        "Here is the text of an invoice. Please extract the following information as structured data, do not skip any item!:\n"
                         "1. Invoice Date (if not present, return '-')\n"
                         "2. PO Number (if not present, return '-')\n"
                         "3. Seller Company Name (if not present, return '-')\n"
