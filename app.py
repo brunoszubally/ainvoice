@@ -136,32 +136,10 @@ def extract_invoice_data(document_text):
         cleaned_response_text = response_text.replace("```json", "").replace("```", "").strip()
         print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
-        # JSON konvertálása
-        try:
-            json_data = json.loads(cleaned_response_text)
 
-            # Stringként kezeljük az összes értéket a serializálási problémák elkerülése érdekében
-            def convert_to_string(data):
-                if isinstance(data, dict):
-                    return {key: convert_to_string(value) for key, value in data.items()}
-                elif isinstance(data, list):
-                    return [convert_to_string(item) for item in data]
-                else:
-                    return str(data)
+        return cleaned_response_text
 
-            json_data = convert_to_string(json_data)
-            print("Parsed and fully string-converted JSON data:", json_data)
-
-            # Visszaadjuk a megfelelően formázott JSON adatot
-            return jsonify(json_data), 200
-
-        except json.JSONDecodeError as json_error:
-            print(f"JSON decode error: {str(json_error)}")
-            return jsonify({"error": "Failed to parse JSON from OpenAI response."}), 500
-
-    except Exception as e:
-        print(f"Error during OpenAI API call: {str(e)}")
-        return jsonify({"error": "An error occurred while processing the invoice data."}), 500
+        
 
 
 # Webszerver indítása
