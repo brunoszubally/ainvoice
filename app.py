@@ -11,6 +11,7 @@ app = Flask(__name__)
 # OpenAI API kulcs beállítása környezeti változóból
 api_key = os.getenv("ASSISTANT_KEY")
 openai.api_key = api_key  # Beállítjuk az OpenAI API kulcsot
+client = OpenAI(api_key=api_key)
 
 # GCP hitelesítési fájl létrehozása a környezeti változóból
 def create_gcp_credentials_file():
