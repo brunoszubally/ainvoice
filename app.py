@@ -92,11 +92,9 @@ def upload_pdf():
 
 
 def extract_invoice_data(document_text):
-    # Logoljuk a szöveget, amit az OpenAI-nak küldünk
     print("Text being sent to OpenAI:", document_text)
     
     try:
-        # OpenAI API meghívása a számla adatok felismeréséhez
         response = client.chat.completions.create( 
             model="gpt-4o-mini",
             messages=[
@@ -132,21 +130,18 @@ def extract_invoice_data(document_text):
             ]
         )
 
-        # OpenAI válasz kivonása
         response_text = (response.choices[0].message.content)
         print("Full OpenAI response:", response_text)
 
-        # Karakterszám alapján eltávolítjuk az első 7 és az utolsó 3 karaktert (```json és ``` eltávolítása)
+        # Tisztítási művelet az OpenAI válaszán
         cleaned_response_text = response_text.strip("```json").strip("```")
-
         print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
-        # JSON validálás és visszaadás
+        # JSON konvertálása
         try:
-            # JSON formátum konvertálása Python objektummá
             json_data = json.loads(cleaned_response_text)
 
-            # Minden mező stringgé alakítása, hogy biztosítsuk a helyes JSON formátumot
+            # Stringként kezeljük az összes értéket a serializálási problémák elkerülése érdekében
             def convert_to_string(data):
                 if isinstance(data, dict):
                     return {key: convert_to_string(value) for key, value in data.items()}
@@ -156,10 +151,9 @@ def extract_invoice_data(document_text):
                     return str(data)
 
             json_data = convert_to_string(json_data)
-
             print("Parsed and fully string-converted JSON data:", json_data)
 
-            # JSON adatok visszaadása
+            # Visszaadjuk a megfelelően formázott JSON adatot
             return jsonify(json_data)
 
         except json.JSONDecodeError as json_error:
@@ -167,7 +161,6 @@ def extract_invoice_data(document_text):
             return jsonify({"error": "Failed to parse JSON from OpenAI response."}), 500
 
     except Exception as e:
-        # Logoljuk ki a hibát, ha valami rosszul megy
         print(f"Error during OpenAI API call: {str(e)}")
         return jsonify({"error": "An error occurred while processing the invoice data."}), 500
 
