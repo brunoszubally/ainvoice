@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify
 from google.api_core.client_options import ClientOptions
 from google.cloud import documentai  # type: ignore
 import openai
+from openai import OpenAI
 
 # Flask alkalmazás létrehozása
 app = Flask(__name__)
