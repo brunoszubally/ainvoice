@@ -100,12 +100,12 @@ def extract_invoice_data(document_text):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an AI that extracts invoice data. Only give back the exact information, no another talk! Every time I need the same response structure and order!"
+                    "content": "You are an AI that extracts invoice data and give it back as structured json data. Only give back the exact information, no another talk! Every time I need the same response structure and order!"
                 },
                 {
                     "role": "user",
                     "content": (
-                        "Here is the text of an invoice. Please extract the following information as structured data!:\n"
+                        "Here is the text of an invoice. Please extract the following information as structured json data!:\n"
                         "1. Invoice Date (if not present, return '-')\n"
                         "2. PO Number (if not present, return '-')\n"
                         "3. Seller Company Name (if not present, return '-')\n"
