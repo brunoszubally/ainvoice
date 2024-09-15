@@ -133,7 +133,7 @@ def extract_invoice_data(document_text):
         response_text = (response.choices[0].message.content)
         print("Full OpenAI response:", response_text)
 
-        # Tisztítási művelet az OpenAI válaszán
+       # Tisztítási művelet az OpenAI válaszán
         cleaned_response_text = response_text.strip("```json").strip("```")
         print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
