@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify
 from google.api_core.client_options import ClientOptions
 from google.cloud import documentai  # type: ignore
 import openai
+from openai import OpenAI
 from PyPDF2 import PdfReader
 
 # Flask alkalmazás létrehozása

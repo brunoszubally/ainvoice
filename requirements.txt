@@ -8,3 +8,4 @@ pandas
 xlsxwriter
 google-cloud-documentai
 google-api-core
+PyPDF2
