@@ -1,10 +1,9 @@
 import os
 import json
-from flask import Flask, request, jsonify, Response, make_response
+from flask import Flask, request, jsonify
 from google.api_core.client_options import ClientOptions
 from google.cloud import documentai  # type: ignore
-import openai  # Itt az OpenAI modul helyes használata
-from openai import OpenAI
+import openai
 
 # Flask alkalmazás létrehozása
 app = Flask(__name__)
@@ -12,7 +11,6 @@ app = Flask(__name__)
 # OpenAI API kulcs beállítása környezeti változóból
 api_key = os.getenv("ASSISTANT_KEY")
 openai.api_key = api_key  # Beállítjuk az OpenAI API kulcsot
-client = OpenAI(api_key=api_key)
 
 # GCP hitelesítési fájl létrehozása a környezeti változóból
 def create_gcp_credentials_file():
@@ -87,15 +85,14 @@ def upload_pdf():
     invoice_data = extract_invoice_data(document_text)
 
     # Számla adatok visszaküldése JSON formátumban
-    return jsonify(invoice_data)
-
+    return jsonify(invoice_data), 200
 
 
 def extract_invoice_data(document_text):
     print("Text being sent to OpenAI:", document_text)
     
     try:
-        response = client.chat.completions.create( 
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {
@@ -133,35 +130,38 @@ def extract_invoice_data(document_text):
         response_text = (response.choices[0].message.content)
         print("Full OpenAI response:", response_text)
 
-print("Full OpenAI response:", response_text)
+        # Tisztítási művelet az OpenAI válaszán
+        cleaned_response_text = response_text.replace("```json", "").replace("```", "").strip()
+        print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
-# Tisztítási művelet az OpenAI válaszán
-cleaned_response_text = response_text.replace("```json", "").replace("```", "").strip()
-print("Cleaned response text after extra cleaning:", cleaned_response_text)
+        # JSON konvertálása
+        try:
+            json_data = json.loads(cleaned_response_text)
 
-# JSON konvertálása
-try:
-    json_data = json.loads(cleaned_response_text)
+            # Stringként kezeljük az összes értéket a serializálási problémák elkerülése érdekében
+            def convert_to_string(data):
+                if isinstance(data, dict):
+                    return {key: convert_to_string(value) for key, value in data.items()}
+                elif isinstance(data, list):
+                    return [convert_to_string(item) for item in data]
+                else:
+                    return str(data)
 
-    # Stringként kezeljük az összes értéket a serializálási problémák elkerülése érdekében
-    def convert_to_string(data):
-        if isinstance(data, dict):
-            return {key: convert_to_string(value) for key, value in data.items()}
-        elif isinstance(data, list):
-            return [convert_to_string(item) for item in data]
-        else:
-            return str(data)
+            json_data = convert_to_string(json_data)
+            print("Parsed and fully string-converted JSON data:", json_data)
 
-    json_data = convert_to_string(json_data)
-    print("Parsed and fully string-converted JSON data:", json_data)
+            # Visszaadjuk a megfelelően formázott JSON adatot
+            return jsonify(json_data), 200
 
-    # Visszaadjuk a megfelelően formázott JSON adatot
-    return jsonify(json_data), 200
+        except json.JSONDecodeError as json_error:
+            print(f"JSON decode error: {str(json_error)}")
+            return jsonify({"error": "Failed to parse JSON from OpenAI response."}), 500
 
-except json.JSONDecodeError as json_error:
-    print(f"JSON decode error: {str(json_error)}")
-    return jsonify({"error": "Failed to parse JSON from OpenAI response."}), 500
+    except Exception as e:
+        print(f"Error during OpenAI API call: {str(e)}")
+        return jsonify({"error": "An error occurred while processing the invoice data."}), 500
 
-except Exception as e:
-    print(f"Error during OpenAI API call: {str(e)}")
-    return jsonify({"error": "An error occurred while processing the invoice data."}), 500
+
+# Webszerver indítása
+if __name__ == '__main__':
+    app.run(debug=True)
