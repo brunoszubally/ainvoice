@@ -100,7 +100,7 @@ def extract_invoice_data(document_text):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an AI that extracts invoice data."
+                    "content": "You are an AI that extracts invoice data. Only give back the exact information, no another talk!"
                 },
                 {
                     "role": "user",
