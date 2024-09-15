@@ -90,6 +90,7 @@ def upload_pdf():
     return jsonify(invoice_data), 200
 
 
+
 def extract_invoice_data(document_text):
     print("Text being sent to OpenAI:", document_text)
     
@@ -136,11 +137,14 @@ def extract_invoice_data(document_text):
         cleaned_response_text = response_text.replace("```json", "").replace("```", "").strip()
         print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
-        return cleaned_response_text
+        # A JSON string átalakítása strukturált JSON adatformává
+        structured_data = json.loads(cleaned_response_text)
+        return structured_data
 
     except Exception as e:
         print(f"An error occurred during OpenAI API call: {e}")
         return {"error": "Failed to extract invoice data."}
+
 
 
 # Webszerver indítása
