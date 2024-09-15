@@ -136,10 +136,11 @@ def extract_invoice_data(document_text):
         cleaned_response_text = response_text.replace("```json", "").replace("```", "").strip()
         print("Cleaned response text after extra cleaning:", cleaned_response_text)
 
-
         return cleaned_response_text
 
-        
+    except Exception as e:
+        print(f"An error occurred during OpenAI API call: {e}")
+        return {"error": "Failed to extract invoice data."}
 
 
 # Webszerver indítása
